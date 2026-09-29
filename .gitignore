@@ -3,3 +3,8 @@ __pycache__/
 .ruff_cache/
 .env
 *.pyc
+DockerInstaller.exe
+venv/
+.venv/
+__pycache__/
+.env
