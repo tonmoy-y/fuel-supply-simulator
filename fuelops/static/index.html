@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fuel Ops — Intelligence & Resilience</title>
+<style>
+:root{--bg:#0f1419;--panel:#171d25;--line:#263041;--tx:#e6edf3;--mut:#8b98a9;--ok:#2ea043;--watch:#d29922;--high:#f0883e;--crit:#f85149;--acc:#58a6ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,Segoe UI,Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+h1{font-size:16px;margin:0 12px 0 0}h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 8px}
+.pill{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid var(--line)}
+.NORMAL,.OK,.RECOVERED,.ACCEPTED,.AVAILABLE,.OPEN{color:var(--ok)}.DEGRADED,.WATCH,.RECOVERING,.DEFERRED,.CONSTRAINED,.PENDING,.IN_TRANSIT{color:var(--watch)}
+.HIGH{color:var(--high)}.OFFLINE,.CRITICAL,.DISRUPTED,.OUTAGE,.FAILED,.REJECTED_SIM,.REJECTED_LOCAL{color:var(--crit)}.BLOCKED,.DISMISSED,.ARRIVED,.RESOLVED,.SCHEDULED{color:var(--mut)}
+#banner{display:none;padding:8px 16px;font-weight:600}#banner.show{display:block}#banner.DEGRADED{background:#3b2e0b;color:#f2cc60}#banner.OFFLINE{background:#4a1518;color:#ffa198}
+main{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;padding:12px 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0;overflow:auto}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s6{grid-column:span 6}.s4{grid-column:span 4}
+@media(max-width:1000px){.s8,.s6,.s4{grid-column:span 12}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}.kpi b{display:block;font-size:22px}.kpi span{color:var(--mut);font-size:12px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--mut);font-weight:500;font-size:12px}
+.bar{height:8px;background:#0b0f14;border-radius:4px;min-width:70px;position:relative;overflow:hidden}.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--acc)}
+button{background:#1f6feb;color:#fff;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px}button.sec{background:#2d3542}button:disabled{opacity:.5;cursor:not-allowed}
+.rec{border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px}.rec.CRITICAL{border-left:4px solid var(--crit)}.rec.HIGH{border-left:4px solid var(--high)}.rec.WATCH{border-left:4px solid var(--watch)}
+details summary{cursor:pointer;color:var(--acc)}pre{white-space:pre-wrap;color:var(--mut);font-size:12px;margin:6px 0 0}
+.muted{color:var(--mut)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}svg{width:100%;height:80px}
+#toast{position:fixed;right:16px;bottom:16px;background:#22303f;border:1px solid var(--line);padding:10px 14px;border-radius:8px;display:none;max-width:420px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⛽ Fuel Ops Center</h1>
+  <span id="mode" class="pill">…</span>
+  <span id="tick" class="muted"></span>
+  <span id="fresh" class="muted"></span>
+  <span id="sse" class="pill"></span>
+  <span id="engine" class="pill muted"></span>
+  <span style="flex:1"></span>
+  <label class="muted">Operator <input id="actor" value="operator" size="10"></label>
+  <label class="muted">Token <input id="token" type="password" size="8" placeholder="optional"></label>
+  <button class="sec" id="fbBtn" title="Simulate 'ML model unavailable' → rule-based fallback policy">Toggle fallback policy</button>
+</header>
+<div id="banner"></div>
+<main>
+  <section class="card s12"><h2>Situation briefing</h2><div id="briefing" class="muted">Loading live state…</div></section>
+  <section class="card s12"><div class="kpis" id="kpis"></div></section>
+
+  <section class="card s8"><h2>Recommended allocations (explainable)</h2><div id="recs"><span class="muted">Loading…</span></div></section>
+  <section class="card s4"><h2>Incidents (crisis vs service fault)</h2><div id="incidents"></div></section>
+
+  <section class="card s8"><h2>Station inventory &amp; projected shortage risk (next 6 h)</h2><div id="stations"></div></section>
+  <section class="card s4"><h2>Demand trend &amp; forecast <select id="fsel"></select></h2><div id="chart"></div><div id="chartinfo" class="muted"></div></section>
+
+  <section class="card s6"><h2>Depots</h2><div id="depots"></div></section>
+  <section class="card s6"><h2>Routes &amp; incoming supply</h2><div id="routes"></div><div id="arrivals" style="margin-top:8px"></div></section>
+
+  <section class="card s6"><h2>Allocation status (simulator ledger)</h2><div id="allocs"></div></section>
+  <section class="card s6"><h2>Decision history (audit trail)</h2><div id="decisions"></div></section>
+
+  <section class="card s6"><h2>Active / upcoming simulated events</h2><div id="events"></div></section>
+  <section class="card s6"><h2>Service health &amp; intelligence health</h2><div id="health"></div></section>
+</main>
+<div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>n==null?'—':Math.round(n).toLocaleString();
+const pct=n=>n==null?'—':(n*100).toFixed(1)+'%';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sev=s=>`<span class="${s}">${s}</span>`;
+let state=null,fuelSel=null;
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',6000)}
+function hdrs(){const h={'content-type':'application/json'};if($('token').value)h['X-Operator-Token']=$('token').value;return h}
+async function j(url,opt){const r=await fetch(url,opt);const b=await r.json().catch(()=>({}));if(!r.ok)throw new Error((b.detail&&b.detail.message)||r.status);return b}
+
+async function execRec(id,force){
+  try{const r=await j(`/api/recommendations/${id}/execute`,{method:'POST',headers:hdrs(),body:JSON.stringify({actor:$('actor').value,force})});
+    toast(`${r.outcome}${r.decision&&r.decision.code?' ('+r.decision.code+')':''}: ${r.decision?r.decision.detail:r.detail}`);}
+  catch(e){toast('Error: '+e.message)} load()}
+async function simRec(id){const r=(window.__recs||[]).find(x=>x.id===id);if(!r)return;
+  try{const o=await j('/api/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_depot_id:r.source_depot_id,destination_station_id:r.station_id,route_id:r.route_id,fuel_type:r.fuel_type,quantity:r.quantity})});
+    toast(o.valid?`Simulated: risk ${(o.before.risk*100).toFixed(0)}% -> ${(o.after.risk*100).toFixed(0)}% (arrives tick ${o.arrives_tick}); nothing sent`:`Would be rejected: ${o.violations.map(v=>v.code).join(', ')}`)}catch(e){toast(e.message)}}
+async function dismissRec(id){try{await j(`/api/recommendations/${id}/dismiss`,{method:'POST',headers:hdrs(),body:JSON.stringify({actor:$('actor').value,reason:'dismissed in UI'})})}catch(e){toast(e.message)}load()}
+$('fbBtn').onclick=async()=>{const cur=state&&state.freshness.policy_mode;try{const r=await j('/api/policy',{method:'POST',headers:hdrs(),body:JSON.stringify({mode:cur==='fallback'?'auto':'fallback'})});toast('Policy: '+r.policy_mode+' / engine '+r.engine)}catch(e){toast(e.message)}load()};
+
+function render(){
+  const s=state;if(!s)return;const f=s.freshness;
+  $('mode').className='pill '+f.mode;$('mode').textContent=f.mode;
+  $('tick').textContent=s.instance?`tick ${s.instance.tick} · ${s.instance.sim_time.replace('T',' ').slice(0,16)} · sim ${s.instance.status}`:'no simulator state';
+  $('fresh').textContent=f.data_age_s==null?'never synced':`data age ${f.data_age_s}s${f.stale?' · STALE':''}`;
+  $('sse').textContent=f.sse_connected?'SSE live':'SSE down (polling)';$('sse').className='pill '+(f.sse_connected?'OK':'WATCH');
+  $('engine').textContent='engine: '+s.engine+(f.policy_mode==='fallback'?' (forced)':'');
+  const b=$('banner');
+  if(f.mode!=='NORMAL'||f.stale){b.className='show '+f.mode;b.textContent=(f.mode==='OFFLINE'?'SIMULATOR UNREACHABLE — showing last known state; actions disabled. ':'DEGRADED — ')+(f.stale?'Data flagged stale by simulator. ':'')+Object.keys(f.section_errors).join(', ')}else b.className='';
+  $('briefing').textContent=s.briefing;
+  const m=s.metrics||{};
+  $('kpis').innerHTML=[['Service level',pct(m.service_level)],['Served (L)',fmt(m.served_demand_liters)],['Unmet (L)',fmt(m.unmet_demand_liters)],
+    ['Allocated (L)',fmt(m.allocation_liters)],['Alloc failures',m.allocation_failures??'—'],
+    ['Shortage alerts',s.assessments.filter(a=>a.severity==='CRITICAL'||a.severity==='HIGH').length],['Open incidents',s.incidents.filter(i=>i.status!=='RECOVERED').length]]
+    .map(([k,v])=>`<div class="kpi"><b>${v}</b><span>${k}</span></div>`).join('');
+  const dis=(f.mode==='OFFLINE');
+  const recs=(window.RECS||[]);
+  $('recs').innerHTML=recs.length?recs.map(r=>{const e=r.explanation||{},x=e.expected_impact||{};
+    return `<div class="rec ${r.severity}"><div class="row"><b>${sev(r.severity)}</b><span>${esc(e.headline)}</span></div>
+    <div class="muted">${r.route_id?`arrive tick ${r.expected_arrival_tick} · risk ${pct(x.risk_before)} → ${pct(x.risk_after)} · confidence ${esc((e.uncertainty||{}).confidence)} (${esc((e.uncertainty||{}).model)})`:'no feasible allocation'}
+    ${r.requires_review?` · <span class="WATCH">REVIEW: ${esc(r.review_reasons.join('; '))}</span>`:''}</div>
+    <div class="row" style="margin-top:6px">${r.route_id?`<button ${dis?'disabled':''} onclick="execRec('${r.id}',false)">Approve &amp; execute</button>`:''}
+    ${r.route_id?`<button class="sec" onclick="simRec('${r.id}')">Simulate</button>`:''}
+    <button class="sec" onclick="dismissRec('${r.id}')">Dismiss</button></div>
+    <details><summary>Why? constraints · alternatives</summary><pre>${esc(JSON.stringify({why_at_risk:e.why_at_risk,signals:e.signals,constraints:e.constraints,expected_impact:e.expected_impact,uncertainty:e.uncertainty,alternatives:e.alternatives},null,1))}</pre></details></div>`}).join(''):'<span class="OK">No action needed — all station/fuel pairs within risk targets.</span>';
+  $('incidents').innerHTML=s.incidents.length?`<table><tr><th>type</th><th>kind</th><th>status</th><th>detail</th></tr>${s.incidents.slice(0,10).map(i=>`<tr><td>${esc(i.type)}</td><td class="${i.kind==='crisis'?'HIGH':'muted'}">${i.kind==='crisis'?'SUPPLY CRISIS':'SERVICE FAULT'}</td><td>${sev(i.status)}</td><td style="white-space:normal">${esc(i.detail)}</td></tr>`).join('')}</table>`:'<span class="muted">No incidents.</span>';
+  const A={};s.assessments.forEach(a=>{(A[a.station_id]=A[a.station_id]||{})[a.fuel]=a});
+  $('stations').innerHTML=`<table><tr><th>Station</th><th>Status</th><th>Fuel</th><th>Inventory</th><th>Fill</th><th>Inbound</th><th>Risk</th><th>Sev</th><th>Empty in</th><th>Model</th></tr>`+
+    s.stations.map(st=>['DIESEL','PETROL','OCTANE'].map((fu,i)=>{const a=(A[st.id]||{})[fu];if(!a)return'';
+    return `<tr><td>${i?'':esc(st.id)}</td><td>${i?'':`<span class="${st.status}">${st.status}</span>`+(st.demand_multiplier!==1?` ×${st.demand_multiplier.toFixed(2)}`:'')}</td><td>${fu}</td><td>${fmt(a.inventory)} / ${fmt(a.capacity)}</td>
+    <td><div class="bar"><i style="width:${a.fill_pct}%"></i></div></td><td>${fmt(a.inbound_l)}</td><td>${pct(a.risk)}</td><td>${sev(a.severity)}</td><td>${a.hours_to_stockout==null?'—':a.hours_to_stockout+' h'}</td><td class="muted">${a.model_source} · ${a.confidence}</td></tr>`}).join('')).join('')+'</table>';
+  $('depots').innerHTML=`<table><tr><th>Depot</th><th>Status</th><th>Dispatch/tick</th><th>Diesel</th><th>Petrol</th><th>Octane</th></tr>${s.depots.map(d=>`<tr><td>${esc(d.id)}</td><td class="${d.status}">${d.status}</td><td>${fmt(d.dispatch_capacity_per_tick)}</td>${['DIESEL','PETROL','OCTANE'].map(fu=>`<td>${fmt(d.inventory[fu])}/${fmt(d.capacity[fu])}</td>`).join('')}</tr>`).join('')}</table>`;
+  $('routes').innerHTML=`<table><tr><th>Route</th><th>Transit</th><th>Max</th><th>Status</th></tr>${s.routes.map(r=>`<tr><td>${esc(r.id)}</td><td>${r.transit_ticks} ticks</td><td>${fmt(r.max_shipment)}</td><td>${sev(r.status)}</td></tr>`).join('')}</table>`;
+  $('arrivals').innerHTML=`<div class="muted">Incoming supply</div><table><tr><th>Depot</th><th>Fuel</th><th>Qty</th><th>Planned tick</th><th>Status</th></tr>${s.arrivals.slice(0,6).map(a=>`<tr><td>${esc(a.depot_id)}</td><td>${a.fuel_type}</td><td>${fmt(a.quantity)}</td><td>${a.planned_tick}</td><td>${sev(a.status)}</td></tr>`).join('')}</table>`;
+  $('allocs').innerHTML=s.allocations.length?`<table><tr><th>#</th><th>Route</th><th>Fuel</th><th>Qty</th><th>Status</th><th>ETA</th><th>Reason</th></tr>${s.allocations.slice(0,10).map(a=>`<tr><td>${a.id}</td><td>${esc(a.route_id)}</td><td>${a.fuel_type}</td><td>${fmt(a.quantity)}</td><td>${sev(a.status)}</td><td>${a.expected_arrival_tick??'—'}</td><td>${esc(a.failure_reason||'')}</td></tr>`).join('')}</table>`:'<span class="muted">No allocations yet.</span>';
+  $('events').innerHTML=s.events.length?`<table><tr><th>Type</th><th>Ticks</th><th>Status</th><th>Params</th></tr>${s.events.slice(0,8).map(e=>`<tr><td>${esc(e.type)}</td><td>${e.start_tick}–${e.end_tick}</td><td>${sev(e.status)}</td><td class="muted" style="white-space:normal">${esc(JSON.stringify(e.parameters))}</td></tr>`).join('')}</table>`:'<span class="muted">No events injected.</span>';
+  if(s.anomalies.length)$('events').innerHTML+=`<div class="HIGH" style="margin-top:6px">Anomalies: ${s.anomalies.map(a=>esc(a.station_id+' '+a.fuel+' — '+a.detail)).join(' · ')}</div>`;
+  const fs=$('fsel');if(!fs.options.length){s.stations.forEach(st=>['DIESEL','PETROL','OCTANE'].forEach(fu=>fs.add(new Option(st.id.replace('station-','')+' '+fu,st.id+'|'+fu))));}
+}
+function renderDecisions(list){$('decisions').innerHTML=list.length?`<table><tr><th>Tick</th><th>Who</th><th>Outcome</th><th>Decision</th><th>Detail</th></tr>${list.slice(0,10).map(d=>`<tr><td>${d.tick}</td><td>${esc(d.actor)}</td><td>${sev(d.outcome)}</td><td>${esc(d.station_id.replace('station-',''))} ${d.fuel_type} ${fmt(d.quantity)} L</td><td style="white-space:normal" class="muted">${esc(d.code?d.code+': ':'')}${esc(d.detail)}</td></tr>`).join('')}</table>`:'<span class="muted">No decisions yet.</span>'}
+function renderHealth(h){if(!h)return;const i=h.intelligence,l=h.simulator_latency_ms,f=h.freshness;
+  $('health').innerHTML=`<table><tr><td>Application</td><td class="OK">${h.app.status}</td><td class="muted">${h.app.cycles} sync cycles · last ${h.app.last_refresh_ms} ms</td></tr>
+  <tr><td>Simulator liveness (/v1/health)</td><td class="${h.simulator_liveness.status==='ok'?'OK':'CRITICAL'}">${esc(h.simulator_liveness.status)}</td><td class="muted">bypasses faults — liveness only</td></tr>
+  <tr><td>Data path (REST sync)</td><td class="${f.mode}">${f.mode}</td><td class="muted">${Object.keys(f.section_errors).length?esc(Object.entries(f.section_errors).map(([k,v])=>k+': '+v).join(' | ')).slice(0,160):'all sections fresh'} ${f.breaker_open?'· breaker OPEN':''}</td></tr>
+  <tr><td>Simulator latency</td><td>${l.p50??'—'} / ${l.p95??'—'} ms</td><td class="muted">p50 / p95</td></tr>
+  <tr><td>Decision engine</td><td>${esc(i.engine)}</td><td class="muted">forecast MAPE ${i.mape==null?'—':pct(i.mape)} · high-confidence ${pct(i.high_confidence_share)}</td></tr></table>`}
+function chart(fc){if(!fc){$('chart').innerHTML='';return}
+  const h=fc.history.map(x=>x.demand),p=fc.forecast.map(x=>x.demand),all=h.concat(p),mx=Math.max(...all,1),W=300,H=80,n=all.length;
+  const pt=(arr,off)=>arr.map((v,i)=>`${((i+off)/(n-1))*W},${H-4-(v/mx)*(H-8)}`).join(' ');
+  $('chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline fill="none" stroke="#58a6ff" stroke-width="1.6" points="${pt(h,0)}"/><polyline fill="none" stroke="#f0883e" stroke-width="1.6" stroke-dasharray="4 3" points="${pt(p,h.length-1)}"/></svg>`;
+  $('chartinfo').textContent=`blue = observed L/tick, orange = forecast · model ${fc.model} (${fc.confidence}), σ≈${(fc.sigma_rel*100).toFixed(0)}%`}
+$('fsel').onchange=e=>{fuelSel=e.target.value;load()};
+async function load(){
+  try{
+    const [s,r,d,h]=await Promise.all([j('/api/state'),j('/api/recommendations'),j('/api/decisions'),j('/api/health/services')]);window.__recs=(r&&r.items)||[];
+    state=s;window.RECS=r.items;render();renderDecisions(d);renderHealth(h);
+    const sel=fuelSel||$('fsel').value;if(sel){const [st,fu]=sel.split('|');try{chart(await j(`/api/forecast/${st}/${fu}`))}catch(e){chart(null)}}
+  }catch(e){const b=$('banner');b.className='show OFFLINE';b.textContent='Dashboard cannot reach the Fuel Ops backend: '+e.message}
+}
+load();setInterval(load,2000);
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+[
+ {
+  "step": "liveness",
+  "t": 1790662867.63,
+  "app": {
+   "status": "ok",
+   "cycles": 196
+  },
+  "sim": {
+   "status": "ok",
+   "database": "ok",
+   "simulation": {
+    "status": "PAUSED",
+    "tick": 77
+   }
+  }
+ },
+ {
+  "step": "normal_operations",
+  "t": 1790662868.05,
+  "tick": 77,
+  "mode": "NORMAL",
+  "engine": "heuristic+forecast",
+  "service_level": 0.936753,
+  "briefing": "Tick 77: service level 93.7%. No critical or high shortage risks. 0 allocation(s) recommended, 0 need review."
+ },
+ {
+  "step": "crisis_detected",
+  "t": 1790662868.48,
+  "briefing": "Tick 81: service level 94.1%. Active crises: demand_spike. 1 critical and 0 high shortage risks. Most urgent: station-mirpur PETROL (86% risk, ~4.83 h to stock-out). 1 allocation(s) recommended, 0 need review.",
+  "anomalies": [
+   {
+    "kind": "anomalous_demand",
+    "station_id": "station-mirpur",
+    "fuel": "DIESEL",
+    "detail": "demand 2.37x documented profile for 2 consecutive ticks"
+   },
+   {
+    "kind": "anomalous_demand",
+    "station_id": "station-mirpur",
+    "fuel": "PETROL",
+    "detail": "demand 2.59x documented profile for 2 consecutive ticks"
+   }
+  ],
+  "crisis_incidents": [
+   "demand_spike"
+  ]
+ },
+ {
+  "step": "recommendation",
+  "t": 1790662868.48,
+  "headline": "station-mirpur PETROL: stock-out risk 86%, empty in ~4.8 h -> send 7000 L from depot-gazipur",
+  "impact": {
+   "risk_before": 0.857,
+   "risk_after": 0.0,
+   "risk_after_extended": 0.454,
+   "hours_to_stockout_before": 4.83,
+   "hours_to_stockout_after": null
+  },
+  "constraints": [
+   "route max shipment 7000 L",
+   "depot inventory 58500 L (after: 51500)",
+   "dispatch budget 12000 L this tick",
+   "station headroom 9827 L",
+   "transit 2 ticks (+1 tick to depart)"
+  ],
+  "review": false
+ },
+ {
+  "step": "simulate_what_if",
+  "t": 1790662868.48,
+  "valid": true,
+  "risk_before": 0.857,
+  "risk_after": 0.0,
+  "no_simulator_write": true
+ },
+ {
+  "step": "allocation_submitted",
+  "t": 1790662868.83,
+  "outcome": "ACCEPTED",
+  "allocation": {
+   "id": 19,
+   "idempotency_key": "fuelops-t81-route-gazipur-mirpur-PETROL-7000",
+   "source_depot_id": "depot-gazipur",
+   "destination_station_id": "station-mirpur",
+   "route_id": "route-gazipur-mirpur",
+   "fuel_type": "PETROL",
+   "quantity": 7000.0,
+   "created_tick": 81,
+   "departure_tick": null,
+   "expected_arrival_tick": null,
+   "actual_arrival_tick": null,
+   "status": "PENDING",
+   "failure_reason": null
+  }
+ },
+ {
+  "step": "idempotent_replay",
+  "t": 1790662868.86,
+  "outcome": "ACCEPTED",
+  "detail": "already submitted (idempotent)"
+ },
+ {
+  "step": "allocation_outcome",
+  "t": 1790662869.3,
+  "status": "ARRIVED",
+  "expected": 84,
+  "actual": 84
+ },
+ {
+  "step": "route_disruption",
+  "t": 1790662869.72,
+  "routes": [
+   "route-gazipur-mirpur"
+  ],
+  "recs": [
+   [
+    "station-coxsbazar",
+    "OCTANE",
+    "route-patiya-coxsbazar"
+   ],
+   [
+    "station-tongi",
+    "OCTANE",
+    "route-gazipur-tongi"
+   ]
+  ]
+ },
+ {
+  "step": "api_fault_injected",
+  "t": 1790662873.23,
+  "readyz": 200,
+  "mode": "DEGRADED",
+  "service_faults": [
+   "api_unavailable"
+  ],
+  "last_known_state_still_served": true
+ },
+ {
+  "step": "recovered_from_fault",
+  "t": 1790662878.53,
+  "mode": "NORMAL",
+  "recovered": true
+ },
+ {
+  "step": "stale_data_gate",
+  "t": 1790662883.2,
+  "outcome": "REJECTED_LOCAL",
+  "code": "STALE_DATA"
+ },
+ {
+  "step": "model_unavailable_fallback",
+  "t": 1790662884.93,
+  "engine": "fallback-rule"
+ },
+ {
+  "step": "recovery",
+  "t": 1790662890.75,
+  "crisis": [
+   [
+    "route_disruption",
+    "RECOVERED"
+   ],
+   [
+    "demand_spike",
+    "RECOVERED"
+   ],
+   [
+    "route_disruption",
+    "RECOVERED"
+   ],
+   [
+    "demand_spike",
+    "RECOVERED"
+   ]
+  ],
+  "metrics": {
+   "served_demand_liters": 140666.703,
+   "unmet_demand_liters": 6717.807,
+   "service_level": 0.95442,
+   "allocation_liters": 123600.0,
+   "allocation_failures": 0
+  },
+  "decisions": 31
+ }
+]

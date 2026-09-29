@@ -1,0 +1,127 @@
+{
+ "passed": 12,
+ "failed": 0,
+ "skipped": 0,
+ "results": [
+  {
+   "id": "S1",
+   "requirement": "DELIV-REPO",
+   "scenario": "required files exist",
+   "expected": "all present",
+   "actual": "15 files present",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.0
+  },
+  {
+   "id": "S2",
+   "requirement": "APP-API",
+   "scenario": "app imports and routes exist",
+   "expected": "all routes",
+   "actual": "10 routes registered",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.42
+  },
+  {
+   "id": "S3",
+   "requirement": "GUARD-24",
+   "scenario": "no /admin/reset code path",
+   "expected": "none",
+   "actual": "no code path POSTs /admin/reset",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.0
+  },
+  {
+   "id": "S4",
+   "requirement": "SEC-18",
+   "scenario": "no hard-coded secrets",
+   "expected": "none",
+   "actual": "no hard-coded credentials found",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.01
+  },
+  {
+   "id": "S5",
+   "requirement": "QUALITY",
+   "scenario": "no placeholders in package",
+   "expected": "none",
+   "actual": "no TODO/NotImplemented in fuelops/",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.0
+  },
+  {
+   "id": "U1",
+   "requirement": "ALL",
+   "scenario": "pytest suite (mock-backed)",
+   "expected": "0 failures",
+   "actual": "71 passed in 8.72s (all tests use the MOCK simulator)",
+   "status": "PASS",
+   "required": true,
+   "seconds": 10.11
+  },
+  {
+   "id": "U2",
+   "requirement": "QUALITY",
+   "scenario": "ruff lint",
+   "expected": "clean",
+   "actual": "All checks passed!",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.06
+  },
+  {
+   "id": "O1",
+   "requirement": "INTEL-7",
+   "scenario": "LP vs engine vs rule on identical state",
+   "expected": "runs, feasible",
+   "actual": "same spike state: lp=11400 L in 4 allocs, engine=22000 L, rule=12000 L",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.44
+  },
+  {
+   "id": "L1",
+   "requirement": "REQ-SIM-READ",
+   "scenario": "read resources from http://localhost:8000",
+   "expected": "200 + required fields",
+   "actual": "GET /v1/instance, /v1/depots, /v1/stations, /v1/routes return expected fields",
+   "status": "PASS",
+   "required": true,
+   "seconds": 0.09
+  },
+  {
+   "id": "L2",
+   "requirement": "REQ-APP-SYNC",
+   "scenario": "running app is ready against simulator",
+   "expected": "200",
+   "actual": "/readyz 200 {\"ready\":true,\"mode\":\"NORMAL\",\"stale\":false,\"data_age_s\":0.5,\"section_errors\":{}",
+   "status": "PASS",
+   "required": false,
+   "seconds": 0.02
+  },
+  {
+   "id": "B1",
+   "requirement": "INTEL-7",
+   "scenario": "policy benchmark (mock)",
+   "expected": "0 failures",
+   "actual": "0 allocation failures in every policy/scenario (mock)",
+   "status": "PASS",
+   "required": true,
+   "seconds": 12.78
+  },
+  {
+   "id": "P1",
+   "requirement": "LOAD-19.10",
+   "scenario": "app load test",
+   "expected": "0 errors",
+   "actual": "284.0 rps p95=91.5ms errors=0",
+   "status": "PASS",
+   "required": false,
+   "seconds": 10.27
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "app": "http://localhost:8080",
+ "concurrent_users": 25,
+ "duration_s": 10.1,
+ "requests": 2863,
+ "rps": 284.0,
+ "p50_ms": 24.0,
+ "p95_ms": 91.5,
+ "p99_ms": 140.9,
+ "max_ms": 295.0,
+ "mean_ms": 33.0,
+ "errors": 0,
+ "error_sample": [],
+ "paths": [
+  "/api/state",
+  "/api/recommendations",
+  "/api/decisions",
+  "/api/health/services",
+  "/api/forecast/station-mirpur/DIESEL",
+  "/readyz"
+ ],
+ "note": "Load is against the app's cached read APIs; simulator traffic is bounded by the app's own refresh loop (~2s)."
+}

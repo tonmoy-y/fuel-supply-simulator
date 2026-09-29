@@ -1,0 +1,143 @@
+{
+ "ticks": 192,
+ "seed": 12345,
+ "world": "MOCK",
+ "results": {
+  "baseline": {
+   "none": {
+    "service_level": 0.461,
+    "unmet_l": 100425,
+    "served_l": 85900,
+    "shipped_l": 0,
+    "failures": 0,
+    "mean_decision_ms": 0.0
+   },
+   "rule": {
+    "service_level": 1.0,
+    "unmet_l": 0,
+    "served_l": 186325,
+    "shipped_l": 187500,
+    "failures": 0,
+    "mean_decision_ms": 0.03
+   },
+   "engine": {
+    "service_level": 1.0,
+    "unmet_l": 0,
+    "served_l": 186325,
+    "shipped_l": 124100,
+    "failures": 0,
+    "mean_decision_ms": 1.4
+   },
+   "lp": {
+    "service_level": 0.9977,
+    "unmet_l": 430,
+    "served_l": 185896,
+    "shipped_l": 113600,
+    "failures": 0,
+    "mean_decision_ms": 4.79
+   }
+  },
+  "demand_spike_dhaka_2.6x": {
+   "none": {
+    "service_level": 0.4171,
+    "unmet_l": 120064,
+    "served_l": 85900,
+    "shipped_l": 0,
+    "failures": 0,
+    "mean_decision_ms": 0.0
+   },
+   "rule": {
+    "service_level": 1.0,
+    "unmet_l": 0,
+    "served_l": 205964,
+    "shipped_l": 207600,
+    "failures": 0,
+    "mean_decision_ms": 0.03
+   },
+   "engine": {
+    "service_level": 1.0,
+    "unmet_l": 0,
+    "served_l": 205964,
+    "shipped_l": 144200,
+    "failures": 0,
+    "mean_decision_ms": 1.77
+   },
+   "lp": {
+    "service_level": 0.9986,
+    "unmet_l": 297,
+    "served_l": 205668,
+    "shipped_l": 133700,
+    "failures": 0,
+    "mean_decision_ms": 4.45
+   }
+  },
+  "spike+route_disruption": {
+   "none": {
+    "service_level": 0.399,
+    "unmet_l": 129380,
+    "served_l": 85900,
+    "shipped_l": 0,
+    "failures": 0,
+    "mean_decision_ms": 0.0
+   },
+   "rule": {
+    "service_level": 1.0,
+    "unmet_l": 0,
+    "served_l": 215280,
+    "shipped_l": 228400,
+    "failures": 0,
+    "mean_decision_ms": 0.03
+   },
+   "engine": {
+    "service_level": 1.0,
+    "unmet_l": 0,
+    "served_l": 215280,
+    "shipped_l": 157000,
+    "failures": 0,
+    "mean_decision_ms": 1.43
+   },
+   "lp": {
+    "service_level": 0.9979,
+    "unmet_l": 454,
+    "served_l": 214827,
+    "shipped_l": 142400,
+    "failures": 0,
+    "mean_decision_ms": 4.07
+   }
+  },
+  "combined_crisis": {
+   "none": {
+    "service_level": 0.3903,
+    "unmet_l": 134206,
+    "served_l": 85900,
+    "shipped_l": 0,
+    "failures": 0,
+    "mean_decision_ms": 0.0
+   },
+   "rule": {
+    "service_level": 0.9865,
+    "unmet_l": 2979,
+    "served_l": 217127,
+    "shipped_l": 219300,
+    "failures": 0,
+    "mean_decision_ms": 0.03
+   },
+   "engine": {
+    "service_level": 0.9865,
+    "unmet_l": 2979,
+    "served_l": 217127,
+    "shipped_l": 164100,
+    "failures": 0,
+    "mean_decision_ms": 1.45
+   },
+   "lp": {
+    "service_level": 0.9859,
+    "unmet_l": 3103,
+    "served_l": 217003,
+    "shipped_l": 145000,
+    "failures": 0,
+    "mean_decision_ms": 3.78
+   }
+  }
+ }
+}

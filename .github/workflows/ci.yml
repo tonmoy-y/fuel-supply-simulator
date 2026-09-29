@@ -1,0 +1,27 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: pytest -q --junitxml=test-results.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: test-results, path: test-results.xml }
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t fuelops:${{ github.sha }} .
+      - name: Deploy smoke test (app + mock simulator) with health check
+        run: |
+          docker compose --profile mock up -d --build mock-simulator app-mock
+          for i in $(seq 1 30); do curl -sf localhost:8081/readyz && break || sleep 2; done
+          curl -sf localhost:8081/api/state | head -c 200
+          docker compose --profile mock down
