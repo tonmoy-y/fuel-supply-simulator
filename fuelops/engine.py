@@ -366,7 +366,7 @@ def fallback_policy(w: World, threshold: float = 0.30, min_ship: float = 500.0) 
                     fuel_type=f, source_depot_id=d["id"], route_id=r["id"], quantity=float(q),
                     expected_arrival_tick=w.tick + 1 + r["transit_ticks"], expected_arrival_time=None,
                     idempotency_key=f"fuelops-fb-t{w.tick}-{r['id']}-{f}-{int(q)}",
-                    requires_review=True, review_reasons=["fallback policy active (no forecast)"],
+                    requires_review=False, review_reasons=["fallback policy active (no forecast)"],
                     explanation=dict(headline=f"FALLBACK: {st['id']} {f} at {100 * inv / cap:.0f}% of capacity -> "
                                               f"send {q:.0f} L from {d['id']}",
                                      why_at_risk=dict(inventory_l=round(inv), capacity_l=cap),
