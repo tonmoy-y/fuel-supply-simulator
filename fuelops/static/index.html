@@ -38,7 +38,8 @@ details summary{cursor:pointer;color:var(--acc)}pre{white-space:pre-wrap;color:v
   <span style="flex:1"></span>
   <label class="muted">Operator <input id="actor" value="operator" size="10"></label>
   <label class="muted">Token <input id="token" type="password" size="8" placeholder="optional"></label>
-  <button class="sec" id="fbBtn" title="Simulate 'ML model unavailable' → rule-based fallback policy">Toggle fallback policy</button>
+  <button class="sec" id="simToggleBtn" title="Play/Pause Simulator">▶ Play Simulator</button>
+  <button class="sec" id="fbBtn" title="Simulate 'ML model unavailable' → rule-based fallback policy">Toggle fallback</button>
 </header>
 <div id="banner"></div>
 <main>
@@ -80,12 +81,18 @@ async function simRec(id){const r=(window.__recs||[]).find(x=>x.id===id);if(!r)r
   try{const o=await j('/api/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_depot_id:r.source_depot_id,destination_station_id:r.station_id,route_id:r.route_id,fuel_type:r.fuel_type,quantity:r.quantity})});
     toast(o.valid?`Simulated: risk ${(o.before.risk*100).toFixed(0)}% -> ${(o.after.risk*100).toFixed(0)}% (arrives tick ${o.arrives_tick}); nothing sent`:`Would be rejected: ${o.violations.map(v=>v.code).join(', ')}`)}catch(e){toast(e.message)}}
 async function dismissRec(id){try{await j(`/api/recommendations/${id}/dismiss`,{method:'POST',headers:hdrs(),body:JSON.stringify({actor:$('actor').value,reason:'dismissed in UI'})})}catch(e){toast(e.message)}load()}
+$('simToggleBtn').onclick=async()=>{const isPaused = state?.instance?.status==='paused';const action=isPaused?'run':'pause';try{await j('/api/admin/'+action,{method:'POST',headers:hdrs()});toast('Simulator '+action)}catch(e){toast(e.message)}load()};
 $('fbBtn').onclick=async()=>{const cur=state&&state.freshness.policy_mode;try{const r=await j('/api/policy',{method:'POST',headers:hdrs(),body:JSON.stringify({mode:cur==='fallback'?'auto':'fallback'})});toast('Policy: '+r.policy_mode+' / engine '+r.engine)}catch(e){toast(e.message)}load()};
 
 function render(){
   const s=state;if(!s)return;const f=s.freshness;
   $('mode').className='pill '+f.mode;$('mode').textContent=f.mode;
   $('tick').textContent=s.instance?`tick ${s.instance.tick} · ${s.instance.sim_time.replace('T',' ').slice(0,16)} · sim ${s.instance.status}`:'no simulator state';
+  if (s.instance) {
+    const isPaused = s.instance.status === 'paused';
+    $('simToggleBtn').textContent = isPaused ? '▶ Play Simulator' : '⏸ Pause Simulator';
+    $('simToggleBtn').style.background = isPaused ? '#1f6feb' : '#da3633';
+  }
   $('fresh').textContent=f.data_age_s==null?'never synced':`data age ${f.data_age_s}s${f.stale?' · STALE':''}`;
   $('sse').textContent=f.sse_connected?'SSE live':'SSE down (polling)';$('sse').className='pill '+(f.sse_connected?'OK':'WATCH');
   $('engine').textContent='engine: '+s.engine+(f.policy_mode==='fallback'?' (forced)':'');
